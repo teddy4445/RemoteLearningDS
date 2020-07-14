@@ -14,7 +14,7 @@ class Main:
     """
 
     @staticmethod
-    def run_analysis():
+    def already_run_analysis():
         # read data
         merged_df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "single_sheet_data.xlsx"]),
                                                 sheet_name="Sheet1")
@@ -31,6 +31,64 @@ class Main:
                                                                                                                corolation[1],
                                                                                                                corolation[2],
                                                                                                                corolation[3]))
+
+        # find final exam score
+        final_scores = Main._final_exam(df=merged_df)
+
+        # show score distribution
+        PlotManager.show_distribution(data=final_scores,
+                                      name="final_scores",
+                                      title="final score distribution",
+                                      x_axis="score",
+                                      y_axis="count")
+
+        mean_final_scores = np.average(final_scores)
+        std_final_scores = np.std(final_scores)
+        with open("answers/final_score_stats.txt", "w") as final_score_file:
+            final_score_file.write("Mean: {:.2f}\nStd: {:.2f}".format(mean_final_scores, std_final_scores))
+
+    @staticmethod
+    def good_students_prefer_recorded_lectures(df):
+        # find final exam score
+        final_scores = Main._final_exam(df=df)
+
+        # calc stats on col
+        mean_final_scores = np.average(final_scores)
+        std_final_scores = np.std(final_scores)
+        threshold =  mean_final_scores + 0.5 * std_final_scores
+
+        # add to df
+        df["final_score"] = final_scores
+
+        good_students = df.loc[df['final_score'] >= threshold]
+        bad_students = df.loc[df['final_score'] < threshold]
+
+        guess_col_names = ["read_slides_happiness_prefer_online",
+                           "read_slides_happiness_prefer_recorded_online",
+                           "online_cannot_replace_frontal",
+                           "recorded_lectures_i_can_rewatch_unclear_sections",
+                           "recorded_lectures_watching_speed",
+                           "recorded_lectures_skipable",
+                           "recorded_lectures_similar_questions_to_mine",
+                           "recorded_lectures_tend_to_delay_watch",
+                           "recorded_lectures_cannot_ask_questions_problem",
+                           "recorded_lectures_skip_additional_explanation",
+                           "recorded_lectures_tend_to_watch_higher_speed"]
+        with open("answers/good_students_prefer_recorded_lectures.txt", "w") as final_score_file:
+            final_score_file.write("Good Students: {} | Bad students: {} | threshold: {:.2f}\n\n".format(good_students.shape[0], bad_students.shape[0], threshold))
+            # test few coloms
+            for col_name in guess_col_names:
+                t_test_score, p_value = scipy.stats.ttest_ind(good_students[col_name], bad_students[col_name])
+                final_score_file.write("{}: t-score: {:.3f} (p = {:.5f})\n".format(col_name, t_test_score, p_value))
+
+    @staticmethod
+    def run_analysis():
+        # read data
+        merged_df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "single_sheet_data.xlsx"]),
+                                                sheet_name="Sheet1")
+
+        # check first hypothesis
+        Main.good_students_prefer_recorded_lectures(df=merged_df)
 
     @staticmethod
     def smart_pearson(df,
@@ -85,6 +143,17 @@ class Main:
                 except Exception as error:
                     print("Was not able to perform on {} with {}".format(col_names[name_index_i], col_names[name_index_j]))
         return answers
+
+    @staticmethod
+    def _final_exam(df) -> list:
+        """
+        :param df: the data frame with the data
+        :return: list of coronations
+        """
+        col_names = list(df.columns)
+        needed_col_names = ["exam_qs_1", "exam_qs_1_bonous", "exam_qs_2", "exam_qs_3", "exam_qs_4", "exam_qs_5", "exam_qs_6a", "exam_qs_6b"]
+        columns_index = [index for index, name in enumerate(col_names) if name in needed_col_names]
+        return df.iloc[:, columns_index].sum(axis=1)
 
     @staticmethod
     def _calc_pearson_two_col(df, col_name_1: str, col_name_2: str) -> tuple:

@@ -23,3 +23,14 @@ class PlotManager:
                            linecolor='black',
                            ax=ax)
         plot.figure.savefig("answers/corolation_matrix.png")
+
+    @staticmethod
+    def show_distribution(data,
+                          name: str = "",
+                          title: str = "",
+                          x_axis: str = "",
+                          y_axis: str = ""):
+        plot = sns.distplot(data, kde=False, rug=True)
+        plot.set(xlabel=x_axis, ylabel=y_axis)
+        plot.set_title(title)
+        plot.figure.savefig("answers/distribution_{}.png".format(name))
