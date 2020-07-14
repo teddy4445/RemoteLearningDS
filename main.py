@@ -4,6 +4,7 @@ import scipy.stats
 import pandas as pd
 
 # project imports
+from graphs.PlotManger import PlotManager
 from utils.io.path_handler import PathHandler
 
 
@@ -18,8 +19,11 @@ class Main:
         merged_df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "single_sheet_data.xlsx"]),
                                                 sheet_name="Sheet1")
 
+        # generate corr matrix
+        PlotManager.corolation_matrix(df=merged_df)
+
         # first test
-        pass_value = 0.5
+        pass_value = 0.4
         corolations = Main._brute_force_pearson_two_col(df=merged_df, pass_value=pass_value, pass_p_value=0.1)
         with open("answers/coronations_{}.txt".format(pass_value), "w", encoding="utf-8") as corolation_file:
             for corolation in corolations:
@@ -72,7 +76,7 @@ class Main:
         answers = []
 
         col_names = list(df.columns)
-        for name_index_i in range(len(col_names)- 1):
+        for name_index_i in range(len(col_names) - 1):
             for name_index_j in range(name_index_i + 1, len(col_names)):
                 try:
                     value, p_value = Main._calc_pearson_two_col(df, col_names[name_index_i], col_names[name_index_j])
