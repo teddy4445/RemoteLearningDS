@@ -47,6 +47,9 @@ class Main:
         with open("answers/final_score_stats.txt", "w") as final_score_file:
             final_score_file.write("Mean: {:.2f}\nStd: {:.2f}".format(mean_final_scores, std_final_scores))
 
+        # check first hypothesis
+        Main.good_students_prefer_recorded_lectures(df=merged_df)
+
     @staticmethod
     def good_students_prefer_recorded_lectures(df):
         # find final exam score
@@ -55,7 +58,7 @@ class Main:
         # calc stats on col
         mean_final_scores = np.average(final_scores)
         std_final_scores = np.std(final_scores)
-        threshold =  mean_final_scores + 0.5 * std_final_scores
+        threshold = mean_final_scores + 0.5 * std_final_scores
 
         # add to df
         df["final_score"] = final_scores
@@ -82,13 +85,41 @@ class Main:
                 final_score_file.write("{}: t-score: {:.3f} (p = {:.5f})\n".format(col_name, t_test_score, p_value))
 
     @staticmethod
+    def study_method_does_not_change_score(df):
+
+        # find final exam score
+        partial_final_scores = Main._partial_final_exam(df=df)
+
+        # add to df
+        df["partial_final_scores"] = partial_final_scores
+
+        # get the 3 groups
+        recorded_students = df.loc[df["last_lession"] == 1]
+        live_later_students = df.loc[df["last_lession"] == 2]
+        live_students = df.loc[df["last_lession"] == 3]
+
+        students_groups = [recorded_students, live_later_students, live_students]
+        names = ["recorded_students", "live_later_students", "live_students"]
+
+        with open("answers/study_method_does_not_change_score.txt", "w") as final_score_file:
+            # test few coloms
+            for first_group_index in range(len(students_groups)):
+                for second_group_index in range(first_group_index + 1, len(students_groups)):
+                    t_test_score, p_value = scipy.stats.ttest_ind(students_groups[first_group_index]["partial_final_scores"],
+                                                                  students_groups[second_group_index]["partial_final_scores"])
+                    final_score_file.write("{} X {} : t-score: {:.3f} (p = {:.5f})\n".format(names[first_group_index],
+                                                                                             names[second_group_index],
+                                                                                             t_test_score,
+                                                                                             p_value))
+
+    @staticmethod
     def run_analysis():
         # read data
         merged_df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "single_sheet_data.xlsx"]),
                                                 sheet_name="Sheet1")
 
-        # check first hypothesis
-        Main.good_students_prefer_recorded_lectures(df=merged_df)
+        Main.study_method_does_not_change_score(df=merged_df)
+
 
     @staticmethod
     def smart_pearson(df,
@@ -152,6 +183,17 @@ class Main:
         """
         col_names = list(df.columns)
         needed_col_names = ["exam_qs_1", "exam_qs_1_bonous", "exam_qs_2", "exam_qs_3", "exam_qs_4", "exam_qs_5", "exam_qs_6a", "exam_qs_6b"]
+        columns_index = [index for index, name in enumerate(col_names) if name in needed_col_names]
+        return df.iloc[:, columns_index].sum(axis=1)
+
+    @staticmethod
+    def _partial_final_exam(df) -> list:
+        """
+        :param df: the data frame with the data
+        :return: list of coronations
+        """
+        col_names = list(df.columns)
+        needed_col_names = ["exam_qs_1", "exam_qs_1_bonous", "exam_qs_2", "exam_qs_3", "exam_qs_4", "exam_qs_5"]
         columns_index = [index for index, name in enumerate(col_names) if name in needed_col_names]
         return df.iloc[:, columns_index].sum(axis=1)
 
