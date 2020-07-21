@@ -16,7 +16,7 @@ class Main:
     @staticmethod
     def already_run_analysis():
         # read data
-        merged_df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "single_sheet_data.xlsx"]),
+        merged_df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]),
                                                 sheet_name="Sheet1")
 
         # generate corr matrix
@@ -46,6 +46,15 @@ class Main:
         std_final_scores = np.std(final_scores)
         with open("answers/final_score_stats.txt", "w") as final_score_file:
             final_score_file.write("Mean: {:.2f}\nStd: {:.2f}".format(mean_final_scores, std_final_scores))
+
+        # check first hypothesis
+        Main.good_students_prefer_recorded_lectures(df=merged_df)
+
+        # load second part of data
+        questioner = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "questioner_fixed.xlsx"]),
+                                                 sheet_name="Form Responses 1")
+
+        Main.common_analysis(df=questioner)
 
     @staticmethod
     def good_students_prefer_recorded_lectures(df):
@@ -82,13 +91,67 @@ class Main:
                 final_score_file.write("{}: t-score: {:.3f} (p = {:.5f})\n".format(col_name, t_test_score, p_value))
 
     @staticmethod
+    def good_students_prefer_recorded_lectures(df):
+        # find final exam score
+        final_scores = Main._final_exam(df=df)
+
+        # calc stats on col
+        mean_final_scores = np.average(final_scores)
+        std_final_scores = np.std(final_scores)
+        threshold =  mean_final_scores + 0.5 * std_final_scores
+
+        # add to df
+        df["final_score"] = final_scores
+
+        good_students = df.loc[df['final_score'] >= threshold]
+        bad_students = df.loc[df['final_score'] < threshold]
+
+        guess_col_names = ["read_slides_happiness_prefer_online",
+                           "read_slides_happiness_prefer_recorded_online",
+                           "online_cannot_replace_frontal",
+                           "recorded_lectures_i_can_rewatch_unclear_sections",
+                           "recorded_lectures_watching_speed",
+                           "recorded_lectures_skipable",
+                           "recorded_lectures_similar_questions_to_mine",
+                           "recorded_lectures_tend_to_delay_watch",
+                           "recorded_lectures_cannot_ask_questions_problem",
+                           "recorded_lectures_skip_additional_explanation",
+                           "recorded_lectures_tend_to_watch_higher_speed"]
+        with open("answers/good_students_prefer_recorded_lectures.txt", "w") as final_score_file:
+            final_score_file.write("Good Students: {} | Bad students: {} | threshold: {:.2f}\n\n".format(good_students.shape[0], bad_students.shape[0], threshold))
+            # test few coloms
+            for col_name in guess_col_names:
+                t_test_score, p_value = scipy.stats.ttest_ind(good_students[col_name], bad_students[col_name])
+                final_score_file.write("{}: t-score: {:.3f} (p = {:.5f})\n".format(col_name, t_test_score, p_value))
+
+    @staticmethod
+    def common_analysis(df):
+
+        PlotManager.show_distribution(df["age"],
+                                      hist=True,
+                                      kde=True,
+                                      bins=max(df["age"]),
+                                      name="common_analysis_age",
+                                      title="Age Distrebution",
+                                      x_axis="Age [year]",
+                                      y_axis="Density")
+        total = df.count()[0]
+        male = df[df["gender"] == 1].count()[0]
+        PlotManager.pie_chart(sizes=[male / total, 1 - (male / total)],
+                              labels=["Male", "Female"],
+                              name="gender")
+
+        PlotManager.pie_chart(sizes=[df[df["faculty"] == type].count()[0] / total for type in df.faculty.unique()],
+                              labels=df.faculty.unique(),
+                              name="faculty")
+
+    @staticmethod
     def run_analysis():
         # read data
-        merged_df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "single_sheet_data.xlsx"]),
-                                                sheet_name="Sheet1")
+        merged_df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]), sheet_name="Sheet1")
+        questioner = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "questioner_fixed.xlsx"]), sheet_name="Form Responses 1")
 
-        # check first hypothesis
-        Main.good_students_prefer_recorded_lectures(df=merged_df)
+        # TODO: add here more analysis
 
     @staticmethod
     def smart_pearson(df,
