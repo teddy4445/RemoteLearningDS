@@ -123,13 +123,15 @@ class Main:
         df["final_score"] = final_scores
 
         # keep only the wanted coloums
+        print("cols = {} (size = {})".format(PrepareMlDataset.dt_cols, len(PrepareMlDataset.dt_cols)))
         df = df[PrepareMlDataset.dt_cols]
         df = PrepareMlDataset.fix_pysicometry(df=df)
         df = PrepareMlDataset.normalize(df=df,
                                         feature="final_score",
                                         factor=100)
 
-        x, y = PrepareMlDataset.get_xs_ys(df=df, y_cols=["final_score"])
+        y_cols = ["final_score"]
+        x, y = PrepareMlDataset.get_xs_ys(df=df, y_cols=y_cols)
         x_train, y_train, x_test, y_test = PrepareMlDataset.split_data(x, y, 0.3)
         model = RandomForest()
         model.train(x=x_train,
@@ -139,10 +141,12 @@ class Main:
         test_score = model.manual_test(x_test=x_test,
                                        y_test=y_test,
                                        factor=100,
+                                       is_abs_error=True,
                                        debug=debug)
         with open("answers/rf_model_predict_final_score_max_depth_{}.txt".format(max_depth), "w") as result_file:
             result_file.write("Train: {} samples\nTest: {} samples with {:.3f} acc\n".format(x_train.shape[0], x_test.shape[0], test_score))
 
+        df = df.drop(columns=y_cols)
         model.export_graph(feature_names=list(df.columns),
                            print_text="final_score_features",
                            print_to_console=True)
@@ -178,6 +182,7 @@ class Main:
                         max_depth=max_depth)
             test_score = model.manual_test(x_test=x_test,
                                            y_test=y_test,
+                                           is_abs_error=True,
                                            factor=100,
                                            debug=debug)
             test_scores.append(test_score)
