@@ -6,7 +6,7 @@ from sklearn import tree
 import matplotlib.pyplot as plt
 from sklearn.tree import export_text
 from sklearn.tree import export_graphviz
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestRegressor
 
 # project imports
 
@@ -26,11 +26,11 @@ class RandomForest:
         self.model = None
         self.type = None
 
-    def get_model(self) -> RandomForestClassifier:
+    def get_model(self) -> RandomForestRegressor:
         return self.model
 
     def set_model(self,
-                  model: RandomForestClassifier) -> None:
+                  model: RandomForestRegressor) -> None:
         self.model = model
 
     def set_type(self,
@@ -44,23 +44,22 @@ class RandomForest:
               max_depth: int = 2,
               n_estimators: int = 10,
               random_state: int = 0,
-              criterion: str = "entropy") -> None:
+              criterion: str = "mse") -> None:
         if type == RandomForest.random_forst:
-            clf = RandomForestClassifier(criterion=criterion,
-                                         max_depth=max_depth,
-                                         random_state=random_state,
-                                         n_estimators=n_estimators)
+            clf = RandomForestRegressor(criterion=criterion,
+                                        max_depth=max_depth,
+                                        random_state=random_state,
+                                        n_estimators=n_estimators)
         else:
-            clf = tree.DecisionTreeClassifier(criterion=criterion,
-                                              max_depth=max_depth,
-                                              random_state=random_state)
+            clf = tree.DecisionTreeRegressor(criterion=criterion,
+                                             max_depth=max_depth,
+                                             random_state=random_state)
         clf.fit(x, y)
         self.model = clf
         self.type = type
 
     def export_graph(self,
                      feature_names: list,
-                     class_names: list,
                      print_text: str,
                      print_to_console: bool = False):
         if self.type == RandomForest.random_forst:
@@ -70,7 +69,6 @@ class RandomForest:
                                feature_names=feature_names,
                                impurity=True,
                                proportion=True,
-                               class_names=class_names,
                                filled=False)
                 fig.savefig('save_name_rf_tree_answer_{}.png'.format(print_text, i+1))
                 if print_to_console:
@@ -78,23 +76,22 @@ class RandomForest:
                     print("Feature Importance: {}\n\n".format(", ".join(["{:.0f}%".format(math.floor(100 * val)) for val in self.model.model.estimators_[i].feature_importances_])))
         else:
             fig, axes = plt.subplots(nrows=1, ncols=1, figsize=(4, 4), dpi=800)
-            tree.plot_tree(self.model.model,
+            tree.plot_tree(self.model,
                            feature_names=feature_names,
                            impurity=True,
                            proportion=True,
-                           class_names=class_names,
                            filled=False)
             fig.savefig('{}_dtree_answer.png'.format(print_text))
             if print_to_console:
-                print("\nDecision Tree: \n{}".format(export_text(decision_tree=self.model.model)))
-                print("Feature Importance: {}\n\n".format(", ".join(["{:.0f}%".format(math.floor(100 * val)) for val in self.model.model.feature_importances_])))
+                print("\nDecision Tree: \n{}".format(export_text(decision_tree=self.model)))
+                print("Feature Importance: {}\n\n".format(", ".join(["{:.0f}%".format(math.floor(100 * val)) for val in self.model.feature_importances_])))
         plt.close()
 
     def print_importance(self,
                          name: str,
                          ordered: bool = False):
         if self.type == RandomForest.single_tree:
-            importances = [val * 100 for val in self.model.model.feature_importances_]
+            importances = [val * 100 for val in self.model.feature_importances_]
         else:
             importances = []
             for i in range(len(self.model.model.estimators_)):
@@ -114,7 +111,7 @@ class RandomForest:
             importances = [item[1] for item in importances]
         else:
             indeces = [i for i in range(len(importances))]
-        std = np.std(self.model.model.feature_importances_, axis=0)
+        std = np.std(self.model.feature_importances_, axis=0)
         # Plot the feature importances of the forest
         plt.figure()
         plt.title("Feature importance")
@@ -137,8 +134,23 @@ class RandomForest:
              y_test: list):
         return self.model.score(x_test, y_test) if len(x_test) > 0 and len(y_test) > 0 else RandomForest.ERROR_VAL
 
+    def manual_test(self,
+                    x_test: list,
+                    y_test: list,
+                    factor: float,
+                    is_abs_error: bool = False,
+                    debug: bool = False):
+        answer = 0
+        for index in range(len(x_test)):
+            predict = self.predict(x=x_test[index])[0]
+            error = predict - y_test[index][0]
+            answer += abs(error) if is_abs_error else error
+            if debug:
+                print("Predict: {:.2f}, GT: {:.2f}, E: {:.2f}".format(predict, y_test[index][0], error))
+        return 1 - abs((answer / len(x_test)) / factor)
+
     @staticmethod
-    def load(model: RandomForestClassifier):
+    def load(model: RandomForestRegressor):
         rf = RandomForest()
         rf.set_model(model=model)
         return rf

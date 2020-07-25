@@ -4,8 +4,10 @@ import scipy.stats
 import pandas as pd
 
 # project imports
+from ml.random_forest import RandomForest
 from graphs.PlotManger import PlotManager
 from utils.io.path_handler import PathHandler
+from ml.prepare_ml_dataset import PrepareMlDataset
 
 
 class Main:
@@ -16,7 +18,7 @@ class Main:
     @staticmethod
     def already_run_analysis():
         # read data
-        merged_df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "single_sheet_data.xlsx"]),
+        merged_df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]),
                                                 sheet_name="Sheet1")
 
         # generate corr matrix
@@ -49,6 +51,12 @@ class Main:
 
         # check first hypothesis
         Main.good_students_prefer_recorded_lectures(df=merged_df)
+
+        # load second part of data
+        questioner = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "questioner_fixed.xlsx"]),
+                                                 sheet_name="Form Responses 1")
+
+        Main.common_analysis(df=questioner)
 
     @staticmethod
     def good_students_prefer_recorded_lectures(df):
@@ -85,6 +93,99 @@ class Main:
                 final_score_file.write("{}: t-score: {:.3f} (p = {:.5f})\n".format(col_name, t_test_score, p_value))
 
     @staticmethod
+    def common_analysis(df):
+
+        PlotManager.show_distribution(df["age"],
+                                      hist=True,
+                                      kde=True,
+                                      bins=max(df["age"]),
+                                      name="common_analysis_age",
+                                      title="Age Distrebution",
+                                      x_axis="Age [year]",
+                                      y_axis="Density")
+        total = df.count()[0]
+        male = df[df["gender"] == 1].count()[0]
+        PlotManager.pie_chart(sizes=[male / total, 1 - (male / total)],
+                              labels=["Male", "Female"],
+                              name="gender")
+
+        PlotManager.pie_chart(sizes=[df[df["faculty"] == type].count()[0] / total for type in df.faculty.unique()],
+                              labels=df.faculty.unique(),
+                              name="faculty")
+
+    @staticmethod
+    def predict_rf_final_score(df,
+                               debug: bool = False,
+                               max_depth: int = 5):
+        # find final exam score
+        final_scores = Main._final_exam(df=df)
+        # add to df
+        df["final_score"] = final_scores
+
+        # keep only the wanted coloums
+        df = df[PrepareMlDataset.dt_cols]
+        df = PrepareMlDataset.fix_pysicometry(df=df)
+        df = PrepareMlDataset.normalize(df=df,
+                                        feature="final_score",
+                                        factor=100)
+
+        x, y = PrepareMlDataset.get_xs_ys(df=df, y_cols=["final_score"])
+        x_train, y_train, x_test, y_test = PrepareMlDataset.split_data(x, y, 0.3)
+        model = RandomForest()
+        model.train(x=x_train,
+                    y=y_train,
+                    type=RandomForest.single_tree,
+                    max_depth=max_depth)
+        test_score = model.manual_test(x_test=x_test,
+                                       y_test=y_test,
+                                       factor=100,
+                                       debug=debug)
+        with open("answers/rf_model_predict_final_score_max_depth_{}.txt".format(max_depth), "w") as result_file:
+            result_file.write("Train: {} samples\nTest: {} samples with {:.3f} acc\n".format(x_train.shape[0], x_test.shape[0], test_score))
+
+        model.export_graph(feature_names=list(df.columns),
+                           print_text="final_score_features",
+                           print_to_console=True)
+
+        model.print_importance(name="final_score_features",
+                               ordered=False)
+
+    @staticmethod
+    def predict_rf_final_score_k_fold_test(df,
+                                           debug: bool = False,
+                                           max_depth: int = 5,
+                                           k: int = 100):
+        # find final exam score
+        final_scores = Main._final_exam(df=df)
+        # add to df
+        df["final_score"] = final_scores
+
+        # keep only the wanted coloums
+        df = df[PrepareMlDataset.dt_cols]
+        df = PrepareMlDataset.fix_pysicometry(df=df)
+        df = PrepareMlDataset.normalize(df=df,
+                                        feature="final_score",
+                                        factor=100)
+        x, y = PrepareMlDataset.get_xs_ys(df=df, y_cols=["final_score"])
+
+        test_scores = []
+        for i in range(k):
+            x_train, y_train, x_test, y_test = PrepareMlDataset.split_data(x, y, 0.3)
+            model = RandomForest()
+            model.train(x=x_train,
+                        y=y_train,
+                        type=RandomForest.single_tree,
+                        max_depth=max_depth)
+            test_score = model.manual_test(x_test=x_test,
+                                           y_test=y_test,
+                                           factor=100,
+                                           debug=debug)
+            test_scores.append(test_score)
+        print("\nAvg test score: {:.4f}\n".format(sum(test_scores) / len(test_scores)))
+        with open("answers/rf_model_predict_final_score_k_fold_test_max_depth_{}.txt".format(max_depth), "w") as result_file:
+            result_file.write("k = {}, average accuracy = {:.4f}".format(k, sum(test_scores) / len(test_scores)))
+
+    @staticmethod
     def study_method_does_not_change_score(df):
 
         # find final exam score
@@ -114,11 +215,10 @@ class Main:
 
     @staticmethod
     def run_analysis():
-        # read data
-        merged_df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "single_sheet_data.xlsx"]),
-                                                sheet_name="Sheet1")
+        merged_df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "single_sheet_data.xlsx"]), sheet_name="Sheet1")
 
-        Main.study_method_does_not_change_score(df=merged_df)
+        Main.predict_rf_final_score(df=merged_df, max_depth=2, debug=False)
+        Main.predict_rf_final_score_k_fold_test(df=merged_df, max_depth=2, debug=False)
 
     @staticmethod
     def smart_pearson(df,
