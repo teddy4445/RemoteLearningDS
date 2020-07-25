@@ -120,7 +120,6 @@ class Main:
 
         Main.study_method_does_not_change_score(df=merged_df)
 
-
     @staticmethod
     def smart_pearson(df,
                       columns_index: list,
