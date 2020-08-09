@@ -228,6 +228,11 @@ class Main:
         df.to_excel("filtered_data.xlsx")
 
     @staticmethod
+    def pull_zero_students(df):
+        coloums = ["bagrot", "first_semester_score", "pysicometry"]
+        [df[df[col] == 0]["Email"].to_excel("zero_{}_emails.xlsx".format(col)) for col in coloums]
+
+    @staticmethod
     def get_middle_students(df):
         df = df[df["first_semester_score"] >= 75]
         df = df[df["first_semester_score"] <= 92]
@@ -235,10 +240,8 @@ class Main:
 
     @staticmethod
     def run_analysis():
-        df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "single_sheet_data.xlsx"]), sheet_name="Sheet1")
-        df = Main.get_middle_students(df=df)
-        for max_depth in range(4, 5):
-            Main.predict_rf_final_score(df, True, max_depth=max_depth)
+        df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]), sheet_name="Sheet1")
+        Main.pull_zero_students(df=df)
 
     @staticmethod
     def smart_pearson(df,
