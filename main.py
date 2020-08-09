@@ -219,11 +219,26 @@ class Main:
                                                                                              p_value))
 
     @staticmethod
-    def run_analysis():
-        merged_df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "single_sheet_data.xlsx"]), sheet_name="Sheet1")
+    def analyze_backgroud_fix(df):
+        df = df[df["bagrot"] > 0]
+        df = df[df["first_semester_score"] > 0]
+        df = df[df["pysicometry"] > 0]
+        df = df[df["pysicometry"] < 200]
 
-        Main.predict_rf_final_score(df=merged_df, max_depth=2, debug=False)
-        Main.predict_rf_final_score_k_fold_test(df=merged_df, max_depth=2, debug=False)
+        df.to_excel("filtered_data.xlsx")
+
+    @staticmethod
+    def get_middle_students(df):
+        df = df[df["first_semester_score"] >= 75]
+        df = df[df["first_semester_score"] <= 92]
+        return df
+
+    @staticmethod
+    def run_analysis():
+        df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "single_sheet_data.xlsx"]), sheet_name="Sheet1")
+        df = Main.get_middle_students(df=df)
+        for max_depth in range(4, 5):
+            Main.predict_rf_final_score(df, True, max_depth=max_depth)
 
     @staticmethod
     def smart_pearson(df,
