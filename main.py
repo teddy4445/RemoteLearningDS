@@ -223,6 +223,34 @@ class Main:
                                                                                              p_value))
 
     @staticmethod
+<<<<<<< HEAD
+=======
+    def analyze_backgroud_fix(df):
+        df = df[df["bagrot"] > 0]
+        df = df[df["first_semester_score"] > 0]
+        df = df[df["pysicometry"] > 0]
+        df = df[df["pysicometry"] < 200]
+
+        df.to_excel("filtered_data.xlsx")
+
+    @staticmethod
+    def pull_zero_students(df):
+        coloums = ["bagrot", "first_semester_score", "pysicometry"]
+        [df[df[col] == 0]["Email"].to_excel("zero_{}_emails.xlsx".format(col)) for col in coloums]
+
+    @staticmethod
+    def get_middle_students(df):
+        df = df[df["first_semester_score"] >= 75]
+        df = df[df["first_semester_score"] <= 92]
+        return df
+
+    @staticmethod
+    def run_analysis():
+        df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]), sheet_name="Sheet1")
+        Main.pull_zero_students(df=df)
+
+    @staticmethod
+>>>>>>> dc3d0fad7829d6833be3b0800135609c01c29ee6
     def smart_pearson(df,
                       columns_index: list,
                       weights: list,
