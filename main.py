@@ -223,8 +223,6 @@ class Main:
                                                                                              p_value))
 
     @staticmethod
-<<<<<<< HEAD
-=======
     def analyze_backgroud_fix(df):
         df = df[df["bagrot"] > 0]
         df = df[df["first_semester_score"] > 0]
@@ -250,7 +248,6 @@ class Main:
         Main.pull_zero_students(df=df)
 
     @staticmethod
->>>>>>> dc3d0fad7829d6833be3b0800135609c01c29ee6
     def smart_pearson(df,
                       columns_index: list,
                       weights: list,
