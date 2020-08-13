@@ -9,6 +9,10 @@ from graphs.PlotManger import PlotManager
 from utils.io.path_handler import PathHandler
 from ml.prepare_ml_dataset import PrepareMlDataset
 
+# ML libraries
+from sklearn.naive_bayes import GaussianNB
+from sklearn.model_selection import train_test_split
+
 
 class Main:
     """
@@ -219,13 +223,6 @@ class Main:
                                                                                              p_value))
 
     @staticmethod
-    def run_analysis():
-        merged_df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "single_sheet_data.xlsx"]), sheet_name="Sheet1")
-
-        Main.predict_rf_final_score(df=merged_df, max_depth=2, debug=False)
-        Main.predict_rf_final_score_k_fold_test(df=merged_df, max_depth=2, debug=False)
-
-    @staticmethod
     def smart_pearson(df,
                       columns_index: list,
                       weights: list,
@@ -342,6 +339,50 @@ class Main:
         return pd.read_excel(data_path,
                              index_col=0,
                              sheet_name=sheet_name)
+
+    @staticmethod
+    def run_analysis():
+        df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]), sheet_name="Sheet1")
+        df = df[df["pysicometry"] < 200] # clear bad lines
+
+        # add final score
+        col_names = list(df.columns)
+        needed_col_names = ["exam_qs_1", "exam_qs_1_bonous", "exam_qs_2", "exam_qs_3", "exam_qs_4", "exam_qs_5"]
+        columns_index = [index for index, name in enumerate(col_names) if name in needed_col_names]
+        df["final_score"] = df.iloc[:, columns_index].sum(axis=1)
+
+        # find good students threshold
+        scores = list(df["final_score"])
+        mean_score = sum(scores) / len(scores)
+        std_score = np.std(scores)
+        upper_score = mean_score + 0.5 * std_score
+
+        interestring_coloums = ["bagrot", "first_semester_score", "pysicometry", "prefer_lecture_and_practice",
+                                "prefer_record_lecture_and_not_practice", "prefer_not_lecture_and_recorded_practice",
+                                "prefer_lecture_and_practice",	"prefer_lecture_and_frontal_practice",
+                                "read_slides_happiness", "study_just_before_the_exam", "hw_each_week"]
+
+        # split to groups
+        last_lession = {}
+        for i in range(3):
+            key = "group_{}".format(i + 1)
+            last_lession[key] = (df[df["last_lession"] == i + 1])
+            last_lession[key]["final_score"] = last_lession[key]["final_score"].apply(lambda x: 1 if x > upper_score else 0) # fix the 'y' value
+
+            X = last_lession[key][interestring_coloums]
+            y = last_lession[key]["final_score"]
+
+            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=0)
+            gnb = GaussianNB()
+            gnb.fit(X_train, y_train)
+
+            y_pred = gnb.predict(X_test)
+            print("From {} tests: {:.2f}% passed".format(X_test.shape[0], 100 * (y_test == y_pred).sum() / X_test.shape[0]))
+
+            with open("{}_naive_bayes.txt".format(key), "w") as answer_file:
+                answer_string = "features = {}\n\nSigma = {}\nTheta = {}".format(interestring_coloums, gnb.sigma_, gnb.theta_)
+                answer_file.write(answer_string)
+                print("\n\nFor case {}:\n{}".format(key, answer_string))
 
 
 if __name__ == '__main__':

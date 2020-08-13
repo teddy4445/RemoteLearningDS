@@ -1,0 +1,14 @@
+features = ['bagrot', 'first_semester_score', 'pysicometry', 'prefer_lecture_and_practice', 'prefer_record_lecture_and_not_practice', 'prefer_not_lecture_and_recorded_practice', 'prefer_lecture_and_practice', 'prefer_lecture_and_frontal_practice', 'read_slides_happiness', 'study_just_before_the_exam', 'hw_each_week']
+
+Sigma = [[ 65.29085899 212.44875373 311.21883683   1.66759029   1.31301965
+    1.62880913   1.66759029   1.67313046   1.47368447   1.04155151
+    0.7645432 ]
+ [140.13888915 260.68750026 136.24305582   2.0208336    2.05555582
+    1.07638915   2.0208336    1.5208336    0.85416693   0.40972249
+    0.72222249]]
+Theta = [[ 90.15789474  76.84210526 126.78947368   2.73684211   3.05263158
+    1.94736842   2.73684211   2.89473684   3.           2.89473684
+    3.15789474]
+ [ 84.83333333  84.75       117.41666667   2.75         2.66666667
+    2.08333333   2.75         2.25         1.75         2.08333333
+    3.66666667]]
