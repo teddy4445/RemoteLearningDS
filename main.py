@@ -372,7 +372,7 @@ class Main:
 
         # add final score
         col_names = list(df.columns)
-        needed_col_names = ["exam_qs_1", "exam_qs_1_bonous", "exam_qs_2", "exam_qs_3", "exam_qs_4", "exam_qs_5"]
+        needed_col_names = ["exam_qs_1", "exam_qs_1_bonous", "exam_qs_3", "exam_qs_4", "exam_qs_5"]
         columns_index = [index for index, name in enumerate(col_names) if name in needed_col_names]
         df["final_score"] = df.iloc[:, columns_index].sum(axis=1)
 
@@ -380,12 +380,28 @@ class Main:
         scores = list(df["final_score"])
         mean_score = sum(scores) / len(scores)
         std_score = np.std(scores)
-        upper_score = mean_score + 0.5 * std_score
+        upper_score = mean_score + 0 * std_score
 
+        '''
         interestring_coloums = ["bagrot", "first_semester_score", "pysicometry", "prefer_lecture_and_practice",
                                 "prefer_record_lecture_and_not_practice", "prefer_not_lecture_and_recorded_practice",
                                 "prefer_lecture_and_practice",	"prefer_lecture_and_frontal_practice",
                                 "read_slides_happiness", "study_just_before_the_exam", "hw_each_week"]
+        '''
+        interestring_coloums = ["pysicometry",
+                                "first_semester_score",
+                                "read_slides_happiness",
+                                "online_cannot_replace_frontal",
+                                "recorded_lectures_i_can_rewatch_unclear_sections",
+                                "recorded_lectures_comfortable_time",
+                                "recorded_lectures_watching_speed",
+                                "recorded_lectures_skipable",
+                                "recorded_lectures_tend_to_delay_watch",
+                                "recorded_lectures_skip_additional_explanation",
+                                "study_just_before_the_exam",
+                                "care_only_for_final_grade",
+                                "tend_to_delay_tasks",
+                                "hw_each_week"]
 
         # split to groups
         last_lession = {}
@@ -404,8 +420,9 @@ class Main:
             y_pred = gnb.predict(X_test)
             print("From {} tests: {:.2f}% passed".format(X_test.shape[0], 100 * (y_test == y_pred).sum() / X_test.shape[0]))
 
-            with open("{}_naive_bayes.txt".format(key), "w") as answer_file:
-                answer_string = "features = {}\n\nSigma = {}\nTheta = {}".format(interestring_coloums, gnb.sigma_, gnb.theta_)
+            with open("{}.txt".format(key), "w") as answer_file:
+                answer_string = "From {} tests: {:.2f}% passed\n\n".format(X_test.shape[0], 100 * (y_test == y_pred).sum() / X_test.shape[0])
+                answer_string += "features = {}\n\nSigma = {}\nTheta = {}".format(interestring_coloums, gnb.sigma_, gnb.theta_)
                 answer_file.write(answer_string)
                 print("\n\nFor case {}:\n{}".format(key, answer_string))
 
