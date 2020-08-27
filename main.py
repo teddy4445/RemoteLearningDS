@@ -308,7 +308,7 @@ class Main:
         :return: list of coronations
         """
         col_names = list(df.columns)
-        needed_col_names = ["exam_qs_1", "exam_qs_1_bonous", "exam_qs_2", "exam_qs_3", "exam_qs_4", "exam_qs_5", "exam_qs_6a", "exam_qs_6b"]
+        needed_col_names = ["exam_qs_1", "exam_qs_1_bonous", "exam_qs_3", "exam_qs_4", "exam_qs_5"]
         columns_index = [index for index, name in enumerate(col_names) if name in needed_col_names]
         return df.iloc[:, columns_index].sum(axis=1)
 
@@ -428,4 +428,8 @@ class Main:
 
 
 if __name__ == '__main__':
-    Main.run_analysis()
+    df = Main.read_data_to_framework(
+        data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]),
+        sheet_name="Sheet1")
+    Main.predict_rf_final_score(df=df, max_depth=2)
+    Main.predict_rf_final_score_k_fold_test(df=df, max_depth=2)
