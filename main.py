@@ -243,11 +243,6 @@ class Main:
         return df
 
     @staticmethod
-    def run_analysis():
-        df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]), sheet_name="Sheet1")
-        Main.pull_zero_students(df=df)
-
-    @staticmethod
     def smart_pearson(df,
                       columns_index: list,
                       weights: list,
@@ -366,6 +361,15 @@ class Main:
                              sheet_name=sheet_name)
 
     @staticmethod
+    def double_split(val, first_trashold, second_trashold):
+        if val < first_trashold:
+            return 0
+        elif val < second_trashold:
+            return 1
+        else:
+            return 2
+
+    @staticmethod
     def run_analysis():
         df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]), sheet_name="Sheet1")
         df = df[df["pysicometry"] < 200] # clear bad lines
@@ -376,7 +380,7 @@ class Main:
         columns_index = [index for index, name in enumerate(col_names) if name in needed_col_names]
         df["final_score"] = df.iloc[:, columns_index].sum(axis=1)
 
-        # find good students threshold
+        # find good students threshold - not used for now
         scores = list(df["final_score"])
         mean_score = sum(scores) / len(scores)
         std_score = np.std(scores)
@@ -403,28 +407,50 @@ class Main:
                                 "tend_to_delay_tasks",
                                 "hw_each_week"]
 
-        # split to groups
-        last_lession = {}
-        for i in range(3):
-            key = "group_{}".format(i + 1)
-            last_lession[key] = (df[df["last_lession"] == i + 1])
-            last_lession[key]["final_score"] = last_lession[key]["final_score"].apply(lambda x: 1 if x > upper_score else 0) # fix the 'y' value
+        pysicometry_lower = 111
+        pysicometry_middle = 123
 
-            X = last_lession[key][interestring_coloums]
-            y = last_lession[key]["final_score"]
+        y_col_name = "pysicometry"
+        split_col_name = "last_lession"
 
-            X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.4, random_state=0)
-            gnb = GaussianNB()
-            gnb.fit(X_train, y_train)
+        sync_class = (df[(df[split_col_name] == 1) | (df[split_col_name] == 3)])
+        sync_class[y_col_name] = sync_class[y_col_name].apply(lambda x: Main.double_split(x, pysicometry_lower, pysicometry_middle)) # fix the 'y' value
 
-            y_pred = gnb.predict(X_test)
-            print("From {} tests: {:.2f}% passed".format(X_test.shape[0], 100 * (y_test == y_pred).sum() / X_test.shape[0]))
+        X = sync_class[interestring_coloums]
+        y = sync_class[y_col_name]
 
-            with open("{}.txt".format(key), "w") as answer_file:
-                answer_string = "From {} tests: {:.2f}% passed\n\n".format(X_test.shape[0], 100 * (y_test == y_pred).sum() / X_test.shape[0])
-                answer_string += "features = {}\n\nSigma = {}\nTheta = {}".format(interestring_coloums, gnb.sigma_, gnb.theta_)
-                answer_file.write(answer_string)
-                print("\n\nFor case {}:\n{}".format(key, answer_string))
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+        gnb = GaussianNB()
+        gnb.fit(X_train, y_train)
+
+        y_pred = gnb.predict(X_test)
+        print("From {} tests: {:.2f}% passed".format(X_test.shape[0], 100 * (y_test == y_pred).sum() / X_test.shape[0]))
+
+        with open("{}_naive_bayes.txt".format("sync"), "w") as answer_file:
+            answer_string = "features = {}\n\nSigma = {}\nTheta = {}".format(interestring_coloums, gnb.sigma_, gnb.theta_)
+            answer_file.write(answer_string)
+            print("\n\nFor case {}:\n{}".format("sync", answer_string))
+
+        # SECOND OPTION
+
+        unsync_class = (df[df[split_col_name] == 2])
+        unsync_class[y_col_name] = unsync_class[y_col_name].apply(lambda x: Main.double_split(x, pysicometry_lower, pysicometry_middle)) # fix the 'y' value
+
+        X = unsync_class[interestring_coloums]
+        y = unsync_class[y_col_name]
+
+        X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=0)
+        gnb = GaussianNB()
+        gnb.fit(X_train, y_train)
+
+        y_pred = gnb.predict(X_test)
+        print("From {} tests: {:.2f}% passed".format(X_test.shape[0], 100 * (y_test == y_pred).sum() / X_test.shape[0]))
+
+        with open("{}_naive_bayes.txt".format("unsync"), "w") as answer_file:
+            answer_string = "From {} tests: {:.2f}% passed\n\n".format(X_test.shape[0], 100 * (y_test == y_pred).sum() / X_test.shape[0])
+            answer_string += "features = {}\n\nSigma = {}\nTheta = {}".format(interestring_coloums, gnb.sigma_, gnb.theta_)
+            answer_file.write(answer_string)
+            print("\n\nFor case {}:\n{}".format("unsync", answer_string))
 
 
 if __name__ == '__main__':
