@@ -389,9 +389,6 @@ class Main:
         std_score = np.std(scores)
         upper_score = mean_score + 0 * std_score
 
-<<<<<<< HEAD
-        interestring_coloums = ["bagrot", "prefer_lecture_and_practice", "first_semester_score",
-=======
         '''
         interestring_coloums = ["bagrot", "first_semester_score", "pysicometry", "prefer_lecture_and_practice",
 >>>>>>> 51b27a95122152be5f9642353b9ba1918b5828eb
@@ -461,14 +458,8 @@ class Main:
 
 
 if __name__ == '__main__':
-<<<<<<< HEAD
-    Main.predict_rf_final_score(df=Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]),
-                                                               sheet_name="Sheet1"),
-                                max_depth=8)
-=======
     df = Main.read_data_to_framework(
         data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]),
         sheet_name="Sheet1")
     Main.predict_rf_final_score(df=df, max_depth=2)
     Main.predict_rf_final_score_k_fold_test(df=df, max_depth=2)
->>>>>>> 51b27a95122152be5f9642353b9ba1918b5828eb
