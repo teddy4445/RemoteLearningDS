@@ -147,8 +147,10 @@ class Main:
                                        factor=100,
                                        is_abs_error=True,
                                        debug=debug)
+        print_str = "Train: {} samples\nTest: {} samples with {:.3f} acc\n".format(x_train.shape[0], x_test.shape[0], test_score)
+        print(print_str)
         with open("answers/rf_model_predict_final_score_max_depth_{}.txt".format(max_depth), "w") as result_file:
-            result_file.write("Train: {} samples\nTest: {} samples with {:.3f} acc\n".format(x_train.shape[0], x_test.shape[0], test_score))
+            result_file.write(print_str)
 
         df = df.drop(columns=y_cols)
         model.export_graph(feature_names=list(df.columns),
@@ -373,6 +375,7 @@ class Main:
     def run_analysis():
         df = Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]), sheet_name="Sheet1")
         df = df[df["pysicometry"] < 200] # clear bad lines
+        df = df[df["bagrot_points"] != 3] # clear bad lines
 
         # add final score
         col_names = list(df.columns)
@@ -386,7 +389,7 @@ class Main:
         std_score = np.std(scores)
         upper_score = mean_score + 0.5 * std_score
 
-        interestring_coloums = ["bagrot", "first_semester_score", "pysicometry", "prefer_lecture_and_practice",
+        interestring_coloums = ["bagrot", "prefer_lecture_and_practice", "first_semester_score",
                                 "prefer_record_lecture_and_not_practice", "prefer_not_lecture_and_recorded_practice",
                                 "prefer_lecture_and_practice",	"prefer_lecture_and_frontal_practice",
                                 "read_slides_happiness", "study_just_before_the_exam", "hw_each_week"]
@@ -437,4 +440,6 @@ class Main:
 
 
 if __name__ == '__main__':
-    Main.run_analysis()
+    Main.predict_rf_final_score(df=Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]),
+                                                               sheet_name="Sheet1"),
+                                max_depth=8)
