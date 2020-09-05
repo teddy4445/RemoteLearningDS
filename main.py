@@ -305,7 +305,7 @@ class Main:
         :return: list of coronations
         """
         col_names = list(df.columns)
-        needed_col_names = ["exam_qs_1", "exam_qs_1_bonous", "exam_qs_2", "exam_qs_3", "exam_qs_4", "exam_qs_5", "exam_qs_6a", "exam_qs_6b"]
+        needed_col_names = ["exam_qs_1", "exam_qs_1_bonous", "exam_qs_3", "exam_qs_4", "exam_qs_5"]
         columns_index = [index for index, name in enumerate(col_names) if name in needed_col_names]
         return df.iloc[:, columns_index].sum(axis=1)
 
@@ -379,7 +379,7 @@ class Main:
 
         # add final score
         col_names = list(df.columns)
-        needed_col_names = ["exam_qs_1", "exam_qs_1_bonous", "exam_qs_2", "exam_qs_3", "exam_qs_4", "exam_qs_5"]
+        needed_col_names = ["exam_qs_1", "exam_qs_1_bonous", "exam_qs_3", "exam_qs_4", "exam_qs_5"]
         columns_index = [index for index, name in enumerate(col_names) if name in needed_col_names]
         df["final_score"] = df.iloc[:, columns_index].sum(axis=1)
 
@@ -387,12 +387,32 @@ class Main:
         scores = list(df["final_score"])
         mean_score = sum(scores) / len(scores)
         std_score = np.std(scores)
-        upper_score = mean_score + 0.5 * std_score
+        upper_score = mean_score + 0 * std_score
 
+<<<<<<< HEAD
         interestring_coloums = ["bagrot", "prefer_lecture_and_practice", "first_semester_score",
+=======
+        '''
+        interestring_coloums = ["bagrot", "first_semester_score", "pysicometry", "prefer_lecture_and_practice",
+>>>>>>> 51b27a95122152be5f9642353b9ba1918b5828eb
                                 "prefer_record_lecture_and_not_practice", "prefer_not_lecture_and_recorded_practice",
                                 "prefer_lecture_and_practice",	"prefer_lecture_and_frontal_practice",
                                 "read_slides_happiness", "study_just_before_the_exam", "hw_each_week"]
+        '''
+        interestring_coloums = ["pysicometry",
+                                "first_semester_score",
+                                "read_slides_happiness",
+                                "online_cannot_replace_frontal",
+                                "recorded_lectures_i_can_rewatch_unclear_sections",
+                                "recorded_lectures_comfortable_time",
+                                "recorded_lectures_watching_speed",
+                                "recorded_lectures_skipable",
+                                "recorded_lectures_tend_to_delay_watch",
+                                "recorded_lectures_skip_additional_explanation",
+                                "study_just_before_the_exam",
+                                "care_only_for_final_grade",
+                                "tend_to_delay_tasks",
+                                "hw_each_week"]
 
         pysicometry_lower = 111
         pysicometry_middle = 123
@@ -434,12 +454,21 @@ class Main:
         print("From {} tests: {:.2f}% passed".format(X_test.shape[0], 100 * (y_test == y_pred).sum() / X_test.shape[0]))
 
         with open("{}_naive_bayes.txt".format("unsync"), "w") as answer_file:
-            answer_string = "features = {}\n\nSigma = {}\nTheta = {}".format(interestring_coloums, gnb.sigma_, gnb.theta_)
+            answer_string = "From {} tests: {:.2f}% passed\n\n".format(X_test.shape[0], 100 * (y_test == y_pred).sum() / X_test.shape[0])
+            answer_string += "features = {}\n\nSigma = {}\nTheta = {}".format(interestring_coloums, gnb.sigma_, gnb.theta_)
             answer_file.write(answer_string)
             print("\n\nFor case {}:\n{}".format("unsync", answer_string))
 
 
 if __name__ == '__main__':
+<<<<<<< HEAD
     Main.predict_rf_final_score(df=Main.read_data_to_framework(data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]),
                                                                sheet_name="Sheet1"),
                                 max_depth=8)
+=======
+    df = Main.read_data_to_framework(
+        data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]),
+        sheet_name="Sheet1")
+    Main.predict_rf_final_score(df=df, max_depth=2)
+    Main.predict_rf_final_score_k_fold_test(df=df, max_depth=2)
+>>>>>>> 51b27a95122152be5f9642353b9ba1918b5828eb
