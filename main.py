@@ -458,8 +458,15 @@ class Main:
 
 
 if __name__ == '__main__':
+
+    import os
+    try:
+        os.makedirs(os.path.join(os.path.dirname(__file__), "answers"))
+    except Exception as error:
+        pass
+
     df = Main.read_data_to_framework(
         data_path=PathHandler.get_relative_path_from_project_inner_folders(["data", "students_with_tests.xlsx"]),
         sheet_name="Sheet1")
-    Main.predict_rf_final_score(df=df, max_depth=2)
-    Main.predict_rf_final_score_k_fold_test(df=df, max_depth=2)
+    Main.predict_rf_final_score(df=df, max_depth=3)
+    Main.predict_rf_final_score_k_fold_test(df=df, max_depth=3)
